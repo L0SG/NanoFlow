@@ -10,7 +10,7 @@ A flow-based network is considered to be inefficient in parameter complexity bec
 The codebase provides two real-world applications of flow-based models with our method:
 
 1. Waveform synthesis model (i.e. neural vocoder) based on [WaveFlow] (Ping et al., ICML 2020). See below for a detailed description.
-2. Image density estimation based on [Glow] (Kingma et al., NIPS 2018), hosted in a separte `image_density_experiments` subfolder.
+2. Image density estimation based on [Glow] (Kingma et al., NIPS 2018), hosted in a separate `image_density_experiments` subdirectory.
 
 
 
@@ -56,12 +56,12 @@ The codebase provides two real-world applications of flow-based models with our 
    `checkpoint_path` accepts either explicit path, or the parent directory if resuming from averaged weights over multiple checkpoints.
 
    ### Examples
-   insert `checkpoint_path: "experiments/nanoflow-h16-r128-emb512.json/waveflow_5000"` in the config file then run
+   insert `checkpoint_path: "experiments/nanoflow-h16-r128-emb512/waveflow_5000"` in the config file then run
    ```command
    python train.py -c configs/nanoflow-h16-r128-emb512.json
    ```
 
-   for loading averaged weights over 10 recent checkpoints, insert `checkpoint_path: "experiments/nanoflow-h16-r128-emb512.json"` in the config file then run
+   for loading averaged weights over 10 recent checkpoints, insert `checkpoint_path: "experiments/nanoflow-h16-r128-emb512"` in the config file then run
    ```command
    python train.py -a 10 -c configs/nanoflow-h16-r128-emb512.json
    ```
@@ -95,6 +95,8 @@ Here, we describe architectural details worth mentioning:
 
     Later we found no meaningful difference between the two, but the latter assures the positive value range to be interpreted as gating.
 
+5. `reverse_fast` implements an edge case version of the [convolution queue] mechanism without a proper queue system for simplicity. It is only correct up to `"n_height": 16` with `"n_layer_per_cycle": 1`.    
+
    
 ## Reference
 NVIDIA Tacotron2: https://github.com/NVIDIA/tacotron2
@@ -126,3 +128,4 @@ Neural Spline Flows (nsf): https://github.com/bayesiains/nsf
 [here]: https://github.com/r9y9/wavenet_vocoder/issues/67
 [Our other WaveFlow repo]: https://github.com/L0SG/WaveFlow
 [other open-source implementation of WaveNet]: https://github.com/r9y9/wavenet_vocoder/issues/67
+[convolution queue]: https://arxiv.org/abs/1611.09482
