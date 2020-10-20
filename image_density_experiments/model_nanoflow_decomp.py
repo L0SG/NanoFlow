@@ -187,7 +187,6 @@ class FlowNet(nn.Module):
                 self.layers.append(Split2d(num_channels=C))
                 self.output_shapes.append([-1, C // 2, H, W])
                 self.estimator_idx.append(i)
-                self.embedding.append(None)
                 self.flow_idx.append(flow_counter)
                 flow_counter += 1
                 C = C // 2

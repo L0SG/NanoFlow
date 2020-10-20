@@ -174,10 +174,10 @@ class FlowNet(nn.Module):
                 # 3. coupling
                 if flow_coupling == "additive":
                     block = Block(C // 2,
-                                  C // 2,)
+                                  hidden_channels,)
                 elif flow_coupling == "affine":
                     block = Block(C // 2,
-                                  C,)
+                                  hidden_channels,)
 
                 self.estimator.append(block)
 
