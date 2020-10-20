@@ -83,7 +83,7 @@ class WaveFlowCoupling2D(nn.Module):
             elif self.coupling_type == 'nsf':
                 feat = self.proj(feat)
                 x_new = apply_rq_spline_inverse(z[:, :, i_h, :].unsqueeze(2), feat, self.num_bin, self.tail_bound,
-                                                          self.filter_size)
+                                                self.filter_size)
             x_new = x_new.unsqueeze(2)
             x = torch.cat((x, x_new), 2)
 
@@ -109,7 +109,7 @@ class WaveFlowCoupling2D(nn.Module):
             elif self.coupling_type == 'nsf':
                 feat = self.proj(feat)
                 x_new = apply_rq_spline_inverse(z[:, :, i_h, :].unsqueeze(2), feat, self.num_bin, self.tail_bound,
-                                                          self.filter_size)
+                                                self.filter_size)
             x_new = x_new.unsqueeze(2)
             x = torch.cat((x, x_new), 2)
 
@@ -122,7 +122,7 @@ class Flow(nn.Module):
         super().__init__()
 
         self.coupling = WaveFlowCoupling2D(in_channel, cin_channel, filter_size, num_layer, num_height, layers_per_dilation_h_cycle,
-                                            coupling_type, num_bin, tail_bound)
+                                           coupling_type, num_bin, tail_bound)
         self.n_flow = n_flow  # useful for selecting permutation
         self.bipartize = bipartize
 

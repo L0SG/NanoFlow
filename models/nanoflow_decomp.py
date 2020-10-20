@@ -24,10 +24,10 @@ class WaveNet2DDensityEstimator(nn.Module):
             self.dilation_w.append(2 ** i)
 
         self.net = Wavenet2D(in_channels=in_channel, out_channels=filter_size,
-                                  num_layers=num_layer, residual_channels=filter_size,
-                                  gate_channels=filter_size, skip_channels=filter_size,
-                                  kernel_size=3, cin_channels=cin_channel,
-                                  dilation_h=self.dilation_h, dilation_w=self.dilation_w)
+                             num_layers=num_layer, residual_channels=filter_size,
+                             gate_channels=filter_size, skip_channels=filter_size,
+                             kernel_size=3, cin_channels=cin_channel,
+                             dilation_h=self.dilation_h, dilation_w=self.dilation_w)
 
     def forward(self, x, c=None, context=None, debug=False):
         out = self.net(x, c)
@@ -109,7 +109,7 @@ class FlowWithSharedEstimator(nn.Module):
             elif self.coupling_type == 'nsf':
                 feat = self.proj(feat)
                 x_new = apply_rq_spline_inverse(z[:, :, i_h, :].unsqueeze(2), feat, self.num_bin, self.tail_bound,
-                                                          self.filter_size)
+                                                self.filter_size)
             x_new = x_new.unsqueeze(2)
             x = torch.cat((x, x_new), 2)
 
@@ -137,7 +137,7 @@ class FlowWithSharedEstimator(nn.Module):
             elif self.coupling_type == 'nsf':
                 feat = self.proj(feat)
                 x_new = apply_rq_spline_inverse(z[:, :, i_h, :].unsqueeze(2), feat, self.num_bin, self.tail_bound,
-                                                          self.filter_size)
+                                                self.filter_size)
             x_new = x_new.unsqueeze(2)
             x = torch.cat((x, x_new), 2)
 
@@ -174,16 +174,16 @@ class NanoFlowDecomp(nn.Module):
 
         # major change: shared WaveNet2D weight
         self.estimator = WaveNet2DDensityEstimator(self.in_channel, self.cin_channel,
-                                                        self.res_channel, self.n_layer, self.n_height,
-                                                        self.layers_per_dilation_h_cycle)
+                                                   self.res_channel, self.n_layer, self.n_height,
+                                                   self.layers_per_dilation_h_cycle)
         self.flows = nn.ModuleList()
         for i in range(self.n_flow):
             self.flows.append(
                 FlowWithSharedEstimator(self.in_channel, self.cin_channel, filter_size=self.res_channel,
-                                               num_layer=self.n_layer, num_height=self.n_height,
-                                               layers_per_dilation_h_cycle=self.layers_per_dilation_h_cycle,
-                                               coupling_type=self.coupling_type,
-                                               num_bin=num_bin, tail_bound=tail_bound))
+                                        num_layer=self.n_layer, num_height=self.n_height,
+                                        layers_per_dilation_h_cycle=self.layers_per_dilation_h_cycle,
+                                        coupling_type=self.coupling_type,
+                                        num_bin=num_bin, tail_bound=tail_bound))
 
         self.upsample_conv = nn.ModuleList()
         for s in [16, 16]:

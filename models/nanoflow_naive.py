@@ -145,8 +145,8 @@ class NanoFlowNaive(nn.Module):
 
         # major change: shared flow weights
         self.flow = Flow(self.in_channel, self.cin_channel, filter_size=self.res_channel,
-                                   num_layer=self.n_layer, num_height=self.n_height,
-                                   layers_per_dilation_h_cycle=self.layers_per_dilation_h_cycle)
+                         num_layer=self.n_layer, num_height=self.n_height,
+                         layers_per_dilation_h_cycle=self.layers_per_dilation_h_cycle)
 
         self.upsample_conv = nn.ModuleList()
         for s in [16, 16]:

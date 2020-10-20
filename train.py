@@ -60,7 +60,7 @@ def load_checkpoint(checkpoint_path, model, optimizer, scheduler):
         # load params
         model.load_state_dict(new_state_dict)
     print("Loaded checkpoint '{}' (iteration {})" .format(
-          checkpoint_path, iteration))
+        checkpoint_path, iteration))
     return model, optimizer, scheduler, iteration
 
 def load_checkpoint_warm_start(checkpoint_path, model, optimizer, scheduler):
@@ -98,7 +98,7 @@ def load_averaged_checkpoint_warm_start(checkpoint_path, model, optimizer, sched
 
 def save_checkpoint(model, optimizer, scheduler, learning_rate, iteration, filepath):
     print("Saving model and optimizer state at iteration {} to {}".format(
-          iteration, filepath))
+        iteration, filepath))
     if hasattr(model, 'module'):
         model_state_dict = model.module.state_dict()  # dataparallel case
     else:
@@ -217,10 +217,10 @@ def train(model, num_gpus, output_directory, epochs, learning_rate, lr_decay_ste
     synthset = Mel2Samp("test", True, True, **data_config)
     synth_sampler = None
     synth_loader = DataLoader(synthset, num_workers=4, shuffle=False,
-                             sampler=synth_sampler,
-                             batch_size=1,
-                             pin_memory=False,
-                             drop_last=False)
+                              sampler=synth_sampler,
+                              batch_size=1,
+                              pin_memory=False,
+                              drop_last=False)
 
     # Get shared output_directory ready
     if not os.path.isdir(os.path.join(output_directory, waveflow_config["model_name"])):
@@ -305,8 +305,9 @@ def synthesize_master(model, num_gpus, temp, output_directory, epochs, learning_
     iteration = 0
     if checkpoint_path != "":
         model, _, _, iteration = load_checkpoint(checkpoint_path, model, None, None)
-        if hasattr(model, 'cache_flow_embed'):
-            model.h_cache = model.cache_flow_embed()  # used for flow conditioning models
+
+    if hasattr(model, 'cache_flow_embed'):
+        model.h_cache = model.cache_flow_embed(remove_after_cache=True)  # used for flow conditioning models
 
     # remove all weight_norm from the model
     model.remove_weight_norm()
@@ -320,10 +321,10 @@ def synthesize_master(model, num_gpus, temp, output_directory, epochs, learning_
     synthset = Mel2Samp("test", True, True, **data_config)
     synth_sampler = None
     synth_loader = DataLoader(synthset, num_workers=4, shuffle=False,
-                             sampler=synth_sampler,
-                             batch_size=1,
-                             pin_memory=False,
-                             drop_last=False)
+                              sampler=synth_sampler,
+                              batch_size=1,
+                              pin_memory=False,
+                              drop_last=False)
 
     # Get shared output_directory ready
     if not os.path.isdir(os.path.join(output_directory, waveflow_config["model_name"])):
@@ -347,7 +348,7 @@ def synthesize_master(model, num_gpus, temp, output_directory, epochs, learning_
                 mel = mel.half()
             torch.cuda.synchronize()
             tic = time.time()
-            audio = model.reverse(mel, temp)
+            audio = model.reverse_fast(mel, temp)
             torch.cuda.synchronize()
             toc = time.time() - tic
             print('{}: {:.4f} seconds, {:.4f}kHz'.format(i, toc, audio.shape[1] / toc / 1000))
@@ -396,9 +397,12 @@ if __name__ == "__main__":
     model = build_model(waveflow_config)
 
     if args.synthesize:
-        print("INFO: --synthesize is true. running only synthesize loop...")
+        print("INFO: --synthesize is true. running synthesize loop...")
+        torch.backends.cudnn.benchmark = False
+        print("INFO: torch.backends.cudnn.benchmark is set to False")
         synthesize_master(model, num_gpus, args.temp, **train_config)
         print("INFO: synthesize loop done. exiting!")
         exit()
+
     else:
         train(model, num_gpus, **train_config)

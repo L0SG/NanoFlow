@@ -106,10 +106,9 @@ class ResBlock2D(nn.Module):
         nn.init.kaiming_normal_(self.res_skip_conv.weight)
 
     def forward(self, tensor, c=None):
-        n_channels_tensor = torch.IntTensor([self.out_channels])
-
         h_filter_gate = self.filter_gate_conv(tensor)
         c_filter_gate = self.filter_gate_conv_c(c)
+        n_channels_tensor = torch.IntTensor([self.out_channels])
         out = fused_add_tanh_sigmoid_multiply(h_filter_gate, c_filter_gate, n_channels_tensor)
         res_skip = self.res_skip_conv(out)
         return fused_res_skip(tensor, res_skip, n_channels_tensor)
@@ -224,20 +223,18 @@ class ResBlock2DHyperMultGate(nn.Module):
         nn.init.kaiming_normal_(self.res_skip_conv.weight)
 
     def forward(self, tensor, c=None, context=None, multgate=None):
-        n_channels_tensor = torch.IntTensor([self.out_channels])
-
         h_filter_gate = self.filter_gate_conv(tensor)
         c_filter_gate = self.filter_gate_conv_c(c)
         context_filter_gate = self.filter_gate_conv_h(context)
+        n_channels_tensor = torch.IntTensor([self.out_channels])
         out = fused_add_tanh_sigmoid_multiply_with_context(h_filter_gate, c_filter_gate, context_filter_gate, n_channels_tensor)
         res_skip = self.res_skip_conv(out)
         return fused_res_skip_multgate(tensor, res_skip, n_channels_tensor, multgate)
 
     def reverse(self, tensor, c=None, context=None, multgate=None):
         # used for reverse. c and context are all cached
-        n_channels_tensor = torch.IntTensor([self.out_channels])
-
         h_filter_gate = self.filter_gate_conv(tensor)
+        n_channels_tensor = torch.IntTensor([self.out_channels])
         out = fused_add_tanh_sigmoid_multiply_with_context(h_filter_gate, c, context, n_channels_tensor)
         res_skip = self.res_skip_conv(out)
         return fused_res_skip_multgate(tensor, res_skip, n_channels_tensor, multgate)
@@ -275,10 +272,10 @@ class Wavenet2DHyperMultGate(nn.Module):
         self.res_blocks = nn.ModuleList()
         for n in range(num_layers):
             self.res_blocks.append(ResBlock2DHyperMultGate(residual_channels, gate_channels, skip_channels, kernel_size,
-                                                         cin_channels=cin_channels, hyper_channels=hyper_channels,
-                                                         local_conditioning=True,
-                                                         dilation_h=dilation_h[n], dilation_w=dilation_w[n],
-                                                         causal=causal))
+                                                           cin_channels=cin_channels, hyper_channels=hyper_channels,
+                                                           local_conditioning=True,
+                                                           dilation_h=dilation_h[n], dilation_w=dilation_w[n],
+                                                           causal=causal))
 
     def forward(self, x, c=None, context=None, multgate=None):
         h = self.front_conv(x)

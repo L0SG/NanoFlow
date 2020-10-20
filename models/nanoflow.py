@@ -10,8 +10,7 @@ from functions import *
 class WaveNet2DHyperDensityEstimator(nn.Module):
     def __init__(self, in_channel, cin_channel, hyper_channel,
                  filter_size=256, num_layer=6, num_height=None,
-                 layers_per_dilation_h_cycle=3,
-                 p_dropout=0., use_wn_bias=True, use_film=False, use_dsconv=False):
+                 layers_per_dilation_h_cycle=3):
         super().__init__()
         assert num_height is not None
         self.num_height = num_height
@@ -23,16 +22,12 @@ class WaveNet2DHyperDensityEstimator(nn.Module):
         for i in range(num_layer):
             self.dilation_h.append(2 ** (i % self.layers_per_dilation_h_cycle))
             self.dilation_w.append(2 ** i)
-        self.p_dropout = p_dropout
-        self.use_wn_bias = use_wn_bias
-        self.use_film = use_film
-        self.use_dsconv = use_dsconv
 
         self.net = Wavenet2DHyperMultGate(in_channels=in_channel, out_channels=filter_size,
-                                  num_layers=num_layer, residual_channels=filter_size,
-                                  gate_channels=filter_size, skip_channels=filter_size,
-                                  kernel_size=3, cin_channels=cin_channel, hyper_channels=hyper_channel,
-                                  dilation_h=self.dilation_h, dilation_w=self.dilation_w)
+                                          num_layers=num_layer, residual_channels=filter_size,
+                                          gate_channels=filter_size, skip_channels=filter_size,
+                                          kernel_size=3, cin_channels=cin_channel, hyper_channels=hyper_channel,
+                                          dilation_h=self.dilation_h, dilation_w=self.dilation_w)
 
     def forward(self, x, c=None, context=None, multgate=None, debug=False):
         out = self.net(x, c, context, multgate)
@@ -51,7 +46,7 @@ class WaveNet2DHyperDensityEstimator(nn.Module):
         return out
 
 
-class FlowWithHyperSharedEstimatorV2(nn.Module):
+class FlowWithHyperSharedEstimator(nn.Module):
     def __init__(self, in_channel, cin_channel, filter_size, num_layer, num_height, layers_per_dilation_h_cycle,
                  coupling_type, num_bin, tail_bound):
         super().__init__()
@@ -119,7 +114,7 @@ class FlowWithHyperSharedEstimatorV2(nn.Module):
             elif self.coupling_type == 'nsf':
                 feat = self.proj(feat)
                 x_new = apply_rq_spline_inverse(z[:, :, i_h, :].unsqueeze(2), feat, self.num_bin, self.tail_bound,
-                                                          self.filter_size)
+                                                self.filter_size)
             x_new = x_new.unsqueeze(2)
             x = torch.cat((x, x_new), 2)
 
@@ -147,7 +142,7 @@ class FlowWithHyperSharedEstimatorV2(nn.Module):
             elif self.coupling_type == 'nsf':
                 feat = self.proj(feat)
                 x_new = apply_rq_spline_inverse(z[:, :, i_h, :].unsqueeze(2), feat, self.num_bin, self.tail_bound,
-                                                          self.filter_size)
+                                                self.filter_size)
             x_new = x_new.unsqueeze(2)
             x = torch.cat((x, x_new), 2)
 
@@ -174,7 +169,7 @@ class FlowWithHyperSharedEstimatorV2(nn.Module):
                 x_new = apply_affine_coupling_inverse(z[:, :, i_h, :].unsqueeze(2), log_s, t)
             elif self.coupling_type == 'nsf':
                 x_new = apply_rq_spline_inverse(z[:, :, i_h, :].unsqueeze(2), feat, self.num_bin, self.tail_bound,
-                                                          self.filter_size)
+                                                self.filter_size)
             x_new = x_new.unsqueeze(2)
             x = torch.cat((x, x_new), 2)
 
@@ -227,11 +222,11 @@ class NanoFlow(nn.Module):
         self.flows = nn.ModuleList()
         for i in range(self.n_flow):
             self.flows.append(
-                FlowWithHyperSharedEstimatorV2(self.in_channel, self.cin_channel, filter_size=self.res_channel,
-                                               num_layer=self.n_layer, num_height=self.n_height,
-                                               layers_per_dilation_h_cycle=self.layers_per_dilation_h_cycle,
-                                               coupling_type=self.coupling_type,
-                                               num_bin=num_bin, tail_bound=tail_bound))
+                FlowWithHyperSharedEstimator(self.in_channel, self.cin_channel, filter_size=self.res_channel,
+                                             num_layer=self.n_layer, num_height=self.n_height,
+                                             layers_per_dilation_h_cycle=self.layers_per_dilation_h_cycle,
+                                             coupling_type=self.coupling_type,
+                                             num_bin=num_bin, tail_bound=tail_bound))
 
         self.upsample_conv = nn.ModuleList()
         for s in [16, 16]:
