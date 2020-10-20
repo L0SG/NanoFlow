@@ -1,0 +1,1 @@
+This library is hard-forked from [neural spline flows (nsf)](https://github.com/bayesiains/nsf).
