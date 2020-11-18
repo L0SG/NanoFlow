@@ -63,6 +63,27 @@ def load_checkpoint(checkpoint_path, model, optimizer, scheduler):
         checkpoint_path, iteration))
     return model, optimizer, scheduler, iteration
 
+def load_averaged_checkpoint(checkpoint_path, model, num_avg_ckpt):
+    # checkpoint_path is dir in this function
+    assert os.path.isdir(checkpoint_path)
+    list_checkpoints = last_n_checkpoints(checkpoint_path, num_avg_ckpt)
+    iteration = torch.load(list_checkpoints[0], map_location='cpu')['iteration']
+    model_for_loading = average_checkpoints(list_checkpoints, args.epsilon)['model']
+    try:
+        model.load_state_dict(model_for_loading)
+    except RuntimeError:
+        print("DataParallel weight detected. loading...")
+        from collections import OrderedDict
+        new_state_dict = OrderedDict()
+        for k, v in model_for_loading.items():
+            name = k.replace("module.", "")  # remove `module.`
+            new_state_dict[name] = v
+        # load params
+        model.load_state_dict(new_state_dict)
+    print("Loaded averaged checkpoint from '{}' (last iteration {})" .format(
+          checkpoint_path, iteration))
+    return model, iteration
+
 def load_checkpoint_warm_start(checkpoint_path, model, optimizer, scheduler):
     assert os.path.isfile(checkpoint_path)
     checkpoint_dict = torch.load(checkpoint_path, map_location='cpu')
@@ -295,6 +316,66 @@ def train(model, num_gpus, output_directory, epochs, learning_rate, lr_decay_ste
 
         evaluate()
 
+
+def evaluate_master(model, num_gpus, output_directory, epochs, learning_rate, lr_decay_step, lr_decay_gamma,
+          sigma, iters_per_checkpoint, batch_size, seed, fp16_run,
+          checkpoint_path, with_tensorboard):
+
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+
+    # Load checkpoint if one exists
+    iteration = 0
+    if checkpoint_path != "":
+        if args.average_checkpoint == 0:
+            model, _, _, iteration = load_checkpoint(checkpoint_path, model, None, None)
+        else:
+            print("INFO: --average_checkpoint > 0. loading an averaged weight of last {} checkpoints...".format(args.average_checkpoint))
+            model, iteration = load_averaged_checkpoint(checkpoint_path, model, args.average_checkpoint)
+
+    if fp16_run:
+        raise NotImplementedError("do not run evaluation loop with fp16 mode!")
+
+    testset = Mel2Samp("test", True, True, **data_config)
+    test_sampler = None
+    test_loader = DataLoader(testset, num_workers=4, shuffle=False,
+                             sampler=test_sampler,
+                             batch_size=1,
+                             pin_memory=False,
+                             drop_last=False)
+
+    # Get shared output_directory ready
+    if not os.path.isdir(os.path.join(output_directory, waveflow_config["model_name"])):
+        os.makedirs(os.path.join(output_directory, waveflow_config["model_name"]), exist_ok=True)
+        os.chmod(os.path.join(output_directory, waveflow_config["model_name"]), 0o775)
+    print("output directory", os.path.join(output_directory, waveflow_config["model_name"]))
+    if not os.path.isdir(os.path.join(output_directory, "samples")):
+        os.makedirs(os.path.join(output_directory, "samples"), exist_ok=True)
+        os.chmod(os.path.join(output_directory, "samples"), 0o775)
+    os.makedirs(os.path.join(output_directory, "samples", waveflow_config["model_name"]), exist_ok=True)
+    os.chmod(os.path.join(output_directory, "samples", waveflow_config["model_name"]), 0o775)
+
+    criterion = WaveFlowLossDataParallel(sigma)
+
+    model.eval()
+    epoch_eval_loss = 0
+    for i, batch in enumerate(test_loader):
+        with torch.no_grad():
+            mel, audio, filename = batch
+            mel, audio = mel.cuda(), audio.cuda()
+
+            outputs = model(audio, mel)
+
+            loss = criterion(outputs)
+            reduced_loss = loss.item()
+            epoch_eval_loss += reduced_loss
+
+        print("eval data {}: {:.9f}".format(i, reduced_loss))
+
+    epoch_eval_loss = epoch_eval_loss / len(test_loader)
+    print("EVAL_FULL {}:\t{:.9f}".format(iteration, epoch_eval_loss))
+    model.train()
+
 def synthesize_master(model, num_gpus, temp, output_directory, epochs, learning_rate, lr_decay_step, lr_decay_gamma,
                       sigma, iters_per_checkpoint, batch_size, seed, fp16_run,
                       checkpoint_path, with_tensorboard):
@@ -369,6 +450,8 @@ if __name__ == "__main__":
                         help='JSON file for configuration')
     parser.add_argument('-w', '--warm_start', action='store_true',
                         help='warm start. i.e. load_state_dict() with strict=False and optimizer & scheduler are initialized.')
+    parser.add_argument('-v', '--evaluate', action='store_true',
+                        help='evaluate the model with full test set (with full audio clip)')
     parser.add_argument('-s', '--synthesize', action='store_true',
                         help='run synthesize loop only. does not train or evaluate the model.')
     parser.add_argument('-t', '--temp', type=float, default=1.,
@@ -395,6 +478,14 @@ if __name__ == "__main__":
     torch.backends.cudnn.benchmark = True
 
     model = build_model(waveflow_config)
+
+    if args.evaluate:
+        print("INFO: --evaluate is true. running test set evaluation loop...")
+        torch.backends.cudnn.benchmark = False
+        print("INFO: torch.backends.cudnn.benchmark is set to False")
+        evaluate_master(model, num_gpus, **train_config)
+        print("INFO: evaluation loop done. exiting!")
+        exit()
 
     if args.synthesize:
         print("INFO: --synthesize is true. running synthesize loop...")
