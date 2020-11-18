@@ -4,8 +4,11 @@ This repository is an official PyTorch implementation of the paper:
  
 > Sang-gil Lee, Sungwon Kim, Sungroh Yoon. "NanoFlow: Scalable Normalizing Flows with Sublinear Parameter Complexity." _NeurIPS_ (2020).
 >[[arxiv]](https://arxiv.org/abs/2006.06280)
+>
 
-A flow-based network is considered to be inefficient in parameter complexity because of reduced expressiveness of bijective mapping, which renders the models prohibitively expensive in terms of parameters. We present an alternative of parameterization scheme, called NanoFlow, which uses a single neural density estimator to model multiple transformation stages.
+![figure_1](pics/figure_1.png "figure_1")
+
+A flow-based network is considered to be inefficient in parameter complexity because of reduced expressiveness of bijective mapping, which renders the models unfeasibly expensive in terms of parameters. We present an alternative parameterization scheme called NanoFlow, which uses a single neural density estimator to model multiple transformation stages.
 
 The codebase provides two real-world applications of flow-based models with our method:
 
