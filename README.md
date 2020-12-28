@@ -1,5 +1,7 @@
 ## NanoFlow: Scalable Normalizing Flows with Sublinear Parameter Complexity
 
+#### Update: Pretrained weights are now available. See links below.
+
 This repository is an official PyTorch implementation of the paper:
  
 > Sang-gil Lee, Sungwon Kim, Sungroh Yoon. "NanoFlow: Scalable Normalizing Flows with Sublinear Parameter Complexity." _NeurIPS_ (2020).
@@ -100,6 +102,25 @@ Here, we describe architectural details worth mentioning:
 
 5. `reverse_fast` implements an edge case version of the [convolution queue] mechanism without a proper queue system for simplicity. It is only correct up to `"n_height": 16` with `"n_layer_per_cycle": 1`.    
 
+
+### Pretrained Weights
+
+We provide pretrained weights via Google Drive. The models are further fine-tuned for additional 2.5 M steps with a constant `"learning_rate": 2e-4` from the checkpoint used in the paper, then we averaged weights over 20 last checkpoints with `-a 20`. 
+
+Please note that these models are **not** based on the best-performing vocoder configuration of the WaveFlow paper and serve as a comparative study. Specifically,
+
+1. The models are trained on the 90 % of the LJSpeech clips and the remaining 10 % clips are used only for evaluation.
+2. We have not applied the bipartized permutation method in these models.
+
+
+| Models        | Test set LL (gain)| Params (M) | Download |
+|:-------------:|:-------------:|:-------------:|:-------------:|
+| waveflow-h16-r64      | 5.1499 (+0.0142) | 5.925 |[Link](https://drive.google.com/file/d/1kECsaspuoqEOHiJ2b1ZKLKJJvKRm0nRV/view?usp=sharing) |
+| waveflow-h16-r128       | 5.2263 (+0.0204) | 2.792 |[Link](https://drive.google.com/file/d/1ayQMwpdmv3SJYs_0qQNf79gsy1ymSwKP/view?usp=sharing) |
+| nanoflow-h16-r128-emb512      | 5.1711 (+0.0125) | 2.819 |[Link](https://drive.google.com/file/d/1zyadD7RhsUN_YLH9uDGxWRFkJAj1NeL5/view?usp=sharing)      | 
+| nanoflow-h16-r128-emb1024-f16      | 5.2024 (+0.0151) | 2.845 |[Link](https://drive.google.com/file/d/10ccVfmIxLkKlrzFxY6QVkyxnMAOgAf8y/view?usp=sharing)      | 
+
+You can load the pretrained weights by inserting the path to the `"checkpoint_path"` in the config file.
    
 ## Reference
 NVIDIA Tacotron2: https://github.com/NVIDIA/tacotron2
