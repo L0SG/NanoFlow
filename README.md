@@ -116,7 +116,7 @@ Please note that these models are **not** based on the best-performing vocoder c
 | Models        | Test set LL (gain)| Params (M) | Download |
 |:-------------:|:-------------:|:-------------:|:-------------:|
 | waveflow-h16-r64      | 5.1499 (+0.0142) | 5.925 |[Link](https://drive.google.com/file/d/1kECsaspuoqEOHiJ2b1ZKLKJJvKRm0nRV/view?usp=sharing) |
-| waveflow-h16-r128       | 5.2263 (+0.0204) | 2.792 |[Link](https://drive.google.com/file/d/1ayQMwpdmv3SJYs_0qQNf79gsy1ymSwKP/view?usp=sharing) |
+| waveflow-h16-r128       | 5.2263 (+0.0204) | 22.336 |[Link](https://drive.google.com/file/d/1ayQMwpdmv3SJYs_0qQNf79gsy1ymSwKP/view?usp=sharing) |
 | nanoflow-h16-r128-emb512      | 5.1711 (+0.0125) | 2.819 |[Link](https://drive.google.com/file/d/1zyadD7RhsUN_YLH9uDGxWRFkJAj1NeL5/view?usp=sharing)      | 
 | nanoflow-h16-r128-emb1024-f16      | 5.2024 (+0.0151) | 2.845 |[Link](https://drive.google.com/file/d/10ccVfmIxLkKlrzFxY6QVkyxnMAOgAf8y/view?usp=sharing)      | 
 
